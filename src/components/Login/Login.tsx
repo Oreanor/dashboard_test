@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { logIn, register } from "../../services";
+import { register } from "../../services";
 import { ILogInResponse } from "../../interfaces";
 
 interface IProps {
@@ -54,28 +54,36 @@ function Login(props: IProps) {
   //but this is a totally wrong approach in my opinion.
   const handleSignIn = async () => {
     if (checkErrors()) {
-      const resJSON = await register(login, password);
-      if (resJSON.error) {
-        setErrorText(resJSON.error);
-      } else {
-        onLogin(resJSON);
+      try {
+        const resJSON = await register(login, password);
+        if (resJSON.error) {
+          setErrorText(resJSON.error);
+        } else {
+          onLogin(resJSON);
+        }
+      } catch (e) {
+        console.log(e);
       }
     }
   };
 
   const handleRegister = async () => {
     if (checkErrors()) {
-      const resJSON = await register(login, password);
-      if (resJSON.error) {
-        setErrorText(resJSON.error);
-      } else {
-        onLogin(resJSON);
+      try {
+        const resJSON = await register(login, password);
+        if (resJSON.error) {
+          setErrorText(resJSON.error);
+        } else {
+          onLogin(resJSON);
+        }
+      } catch (e) {
+        console.log(e);
       }
     }
   };
 
   const checkErrors = (): boolean => {
-    const hasLoginError = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
+    const hasLoginError = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
       login
     );
     const hasPwdError = password !== "";
@@ -91,7 +99,7 @@ function Login(props: IProps) {
   };
 
   return (
-    <Box sx={{ width: "300px" }}>
+    <Box sx={{ width: "300px", m: 2 }}>
       {errorText && <Alert severity="error">{errorText}</Alert>}
       <Card variant="outlined">
         <CardContent sx={{ p: 2 }}>

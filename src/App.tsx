@@ -17,7 +17,7 @@ import { ILogInResponse, IUser } from "./interfaces";
 import { getUserByID } from "./services";
 
 function App() {
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<IUser | null>(null);
 
   //michael.lawson@reqres.in
@@ -29,14 +29,17 @@ function App() {
     setIsDarkTheme(darkTheme === "true");
 
     const fetchUserData = async () => {
-      const id = sessionStorage.getItem("id");
-      if (id) {
-        const res = await getUserByID(id);
-        setUserInfo(res.data);
+      try {
+        const id = sessionStorage.getItem("id");
+        if (id) {
+          const res = await getUserByID(id);
+          setUserInfo(res.data);
+        }
+      } catch (e) {
+        console.log(e);
       }
     };
-
-    if (token) {
+    if (sessionStorage.getItem("token")) {
       fetchUserData();
     }
   }, []);
@@ -54,12 +57,16 @@ function App() {
   };
 
   const handleLogIn = async (response: ILogInResponse) => {
-    const { id, token } = response;
-    if (id && token) {
-      sessionStorage.setItem("token", token);
-      sessionStorage.setItem("id", id);
-      const res = await getUserByID(id);
-      setUserInfo(res.data);
+    try {
+      const { id, token } = response;
+      if (id && token) {
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("id", id);
+        const res = await getUserByID(id);
+        setUserInfo(res.data);
+      }
+    } catch (e) {
+      console.log(e);
     }
   };
 
@@ -90,7 +97,7 @@ function App() {
         {token ? (
           userInfo ? (
             <Stack>
-              <Typography variant="h5" sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ p: 2 }}>
                 Hello, {userInfo?.first_name}!
               </Typography>
               <UserTable />

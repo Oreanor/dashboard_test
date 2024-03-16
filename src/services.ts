@@ -1,9 +1,10 @@
 import { BASE_API_URL } from "./consts.ts";
 import {
+  IListUsersResponse,
   ILogInResponse,
   IRegisterResponse,
+  IUser,
   IUserResponse,
-  IListUsersResponse,
 } from "./interfaces.ts";
 
 export const logIn = async (
@@ -38,8 +39,9 @@ export const register = async (
   return resJSON;
 };
 
+const token = sessionStorage.getItem("token");
+
 export const getUsers = async (page: number): Promise<IListUsersResponse> => {
-  const token = sessionStorage.getItem("token");
   const params = new URLSearchParams({
     page: page.toString(),
   });
@@ -52,11 +54,43 @@ export const getUsers = async (page: number): Promise<IListUsersResponse> => {
 };
 
 export const getUserByID = async (id: string): Promise<IUserResponse> => {
-  const token = sessionStorage.getItem("token");
   const res = await fetch(BASE_API_URL + `/api/users/${id}`, {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
   const resJSON = await res.json();
   return resJSON;
+};
+
+export const deleteUser = async (id: number) => {
+  await fetch(BASE_API_URL + `/api/users/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const createUser = async (userData: IUser) => {
+  const params = makeParams(userData);
+  await fetch(BASE_API_URL + "/api/users", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: params,
+  });
+};
+
+export const updateUser = async (userData: IUser) => {
+  const params = makeParams(userData);
+  await fetch(BASE_API_URL + `/api/users/${userData.id}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: params,
+  });
+};
+
+const makeParams = (userData: IUser): URLSearchParams => {
+  const params = new URLSearchParams();
+  params.append("email", userData.email);
+  params.append("first_name", userData.first_name);
+  params.append("last_name", userData.last_name);
+  return params;
 };

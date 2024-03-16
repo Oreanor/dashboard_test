@@ -1,18 +1,12 @@
-//import { ITEMS_PER_PAGE } from "../../consts";
 import { useEffect, useState } from "react";
+import { USERS_PER_PAGE } from "../../consts";
 import { IUser } from "../../interfaces";
-import { getUsers } from "../../services";
-
+import { getUsers, deleteUser, createUser, updateUser } from "../../services";
+import { UserProps } from "../../types";
 import {
   Avatar,
-  Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Paper,
+  CircularProgress,
   Stack,
   Table,
   TableBody,
@@ -22,67 +16,203 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import {
-  Close,
-  Edit,
-  Delete,
-  NavigateBefore,
-  NavigateNext,
-} from "@mui/icons-material";
+import { Edit, Delete } from "@mui/icons-material";
+import DeleteDialog from "./Dialogs/DeleteDialog";
+import EditDialog from "./Dialogs/EditDialog";
+import AddDialog from "./Dialogs/AddDialog";
+import TablePagination from "./TablePagination";
 
 function UserTable() {
   const [page, setPage] = useState<number>(1);
-  const [pagesTotal, setPagesTotal] = useState<number>(2);
+  const [pagesTotal, setPagesTotal] = useState<number>(1);
   const [users, setUsers] = useState<IUser[]>([]);
+  const [usersTotal, setUsersTotal] = useState<number>(0);
   const [openDelete, setOpenDelete] = useState<boolean>(false);
   const [openEdit, setOpenEdit] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<number | null>(null);
+  const [openAdd, setOpenAdd] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<IUser | null>(null);
+  const [localPage, setLocalPage] = useState<number>(1);
+  const [localPagesTotal, setLocalPagesTotal] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasEmail, setHasEmail] = useState<boolean>(true);
+  const [hasFirstName, setHasFirstName] = useState<boolean>(true);
+  const [hasLastName, setHasLastName] = useState<boolean>(true);
+  const [newId, setNewId] = useState<number>(-1);
 
+  //Fetching on mount
   useEffect(() => {
     const fetchUsersData = async () => {
-      const res = await getUsers(page);
-      setUsers(res.data);
-      console.log(res);
-      setPagesTotal(res.total_pages);
+      try {
+        setIsLoading(true);
+        const res = await getUsers(1);
+        setIsLoading(false);
+        setUsers(res.data);
+        setLocalPagesTotal(res.total_pages);
+        setPagesTotal(res.total_pages);
+        setUsersTotal(res.total);
+      } catch (e) {
+        console.log(e);
+      }
     };
 
     fetchUsersData();
-  }, [page]);
+  }, []);
 
+  //Loading more users
+  useEffect(() => {
+    const fetchUsersData = async () => {
+      try {
+        setIsLoading(true);
+        const res = await getUsers(page + 1);
+        setIsLoading(false);
+        setUsers((users) => [...users, ...res.data]);
+        setPage(page + 1);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    if (users.length < localPage * USERS_PER_PAGE && page < pagesTotal) {
+      fetchUsersData();
+    }
+  }, [localPage, page, pagesTotal, users]);
+
+  //Updating pages/total
+  useEffect(() => {
+    const newTotalPages = Math.ceil(usersTotal / USERS_PER_PAGE) || 1;
+    setLocalPagesTotal(newTotalPages);
+    if (newTotalPages < localPage) {
+      setLocalPage(newTotalPages);
+    }
+  }, [usersTotal, localPage]);
+
+  //Add user handling
+  const handleOpenAdd = () => {
+    setOpenAdd(true);
+    setCurrentUser({
+      id: newId,
+      email: "",
+      first_name: "",
+      last_name: "",
+    });
+  };
+
+  const handleCloseAdd = () => {
+    setOpenAdd(false);
+  };
+
+  const handleConfirmAdd = async () => {
+    if (checkErrors() && currentUser) {
+      const usersCopy = [currentUser, ...users];
+      setUsers(usersCopy);
+      setOpenAdd(false);
+      setCurrentUser(null);
+      setNewId(newId - 1);
+      setUsersTotal(usersTotal + 1);
+      try {
+        await createUser(currentUser);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  };
+
+  //Edit user handling
   const handleOpenEdit = (id: number) => {
     setOpenEdit(true);
-    setCurrentUser(id);
+    const currUser = findUser(id);
+    setCurrentUser(currUser);
   };
 
-  const handleConfirmEdit = () => {
-    //edit userdata
+  const handleConfirmEdit = async () => {
+    if (checkErrors() && currentUser) {
+      const index = users.findIndex((user) => user.id === currentUser.id);
+      const usersCopy = [...users];
+      usersCopy[index] = { ...currentUser };
+      setUsers(usersCopy);
+      setOpenEdit(false);
+      setCurrentUser(null);
+      try {
+        await updateUser(currentUser);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  };
+
+  const handleCloseEdit = () => {
     setOpenEdit(false);
-    setCurrentUser(null);
-    //call API
   };
 
-  const handleCloseEdit = () => setOpenEdit(false);
-
+  //Delete user handling
   const handleOpenDelete = (id: number) => {
     setOpenDelete(true);
-    setCurrentUser(id);
+    const currUser = findUser(id);
+    setCurrentUser(currUser);
   };
 
-  const handleConfirmDelete = () => {
-    const filteredUsers = users.filter((user) => user.id !== currentUser);
-    setUsers(filteredUsers);
+  const handleConfirmDelete = async () => {
+    const filteredUsers = currentUser
+      ? users.filter((user) => user.id !== currentUser.id)
+      : users;
     setOpenDelete(false);
+    setUsers(filteredUsers);
     setCurrentUser(null);
-    //call API
+    setUsersTotal(usersTotal - 1);
+
+    try {
+      currentUser?.id && (await deleteUser(currentUser.id));
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   const handleCloseDelete = () => setOpenDelete(false);
 
+  const prevPage = () => {
+    setLocalPage(localPage - 1);
+  };
+  const nextPage = () => {
+    setLocalPage(localPage + 1);
+  };
+
+  const findUser = (id: number) => users.find((user) => user.id === id) || null;
+
+  const handleUpdateUser = (field: UserProps, value: string) => {
+    if (currentUser) {
+      const user = { ...currentUser, [field]: value };
+      setCurrentUser(user);
+    }
+  };
+
+  const checkErrors = (): boolean => {
+    if (currentUser) {
+      const isEmailValid = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
+        currentUser.email
+      );
+      const isFirstNameValid = currentUser.first_name !== "";
+      const isLastNameValid = currentUser.last_name !== "";
+
+      setHasEmail(isEmailValid);
+      setHasFirstName(isFirstNameValid);
+      setHasLastName(isLastNameValid);
+
+      return isEmailValid && isFirstNameValid && isLastNameValid;
+    } else return false;
+  };
+
   return (
     <>
       <Stack>
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+        <Button
+          sx={{ width: "150px" }}
+          variant="contained"
+          onClick={handleOpenAdd}
+        >
+          Add user
+        </Button>
+        <TableContainer>
+          <Table sx={{ minWidth: 600 }} aria-label="simple table">
             <TableHead>
               <TableRow>
                 <TableCell>Avatar</TableCell>
@@ -92,126 +222,92 @@ function UserTable() {
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
-            <TableBody>
-              {users.length > 0 &&
-                users.map((row) => (
-                  <TableRow key={row.email}>
-                    <TableCell>
-                      <Avatar
-                        alt={row.first_name + " " + row.last_name}
-                        src={row.avatar}
-                      />
-                    </TableCell>
-                    <TableCell>{row.first_name}</TableCell>
-                    <TableCell>{row.last_name}</TableCell>
-                    <TableCell>{row.email}</TableCell>
-                    <TableCell>
-                      <Edit
-                        sx={{ mr: 2, cursor: "pointer" }}
-                        onClick={() => handleOpenEdit(row.id)}
-                      />
-                      <Delete
-                        sx={{ cursor: "pointer" }}
-                        onClick={() => handleOpenDelete(row.id)}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
+            {isLoading ? (
+              <TableBody>
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    <CircularProgress sx={{ m: 2 }} />
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            ) : users.length > 0 ? (
+              <>
+                <TableBody>
+                  {users
+                    .slice(
+                      (localPage - 1) * USERS_PER_PAGE,
+                      localPage * USERS_PER_PAGE
+                    )
+                    .map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>
+                          <Avatar
+                            alt={`${row.first_name} ${row.last_name}`}
+                            src={row.avatar}
+                          />
+                        </TableCell>
+                        <TableCell>{row.first_name}</TableCell>
+                        <TableCell>{row.last_name}</TableCell>
+                        <TableCell>{row.email}</TableCell>
+                        <TableCell>
+                          <Edit
+                            sx={{ mr: 2, cursor: "pointer" }}
+                            onClick={() => row.id && handleOpenEdit(row.id)}
+                          />
+                          <Delete
+                            sx={{ cursor: "pointer" }}
+                            onClick={() => row.id && handleOpenDelete(row.id)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </>
+            ) : (
+              <TableBody>
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    <Typography>No users data</Typography>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            )}
           </Table>
         </TableContainer>
-        <Box
-          sx={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            m: 1,
-          }}
-        >
-          <IconButton disabled={page === 1} onClick={() => setPage(page - 1)}>
-            <NavigateBefore />
-          </IconButton>
-          <Typography
-            variant="body2"
-            sx={{ display: "inline-block", ml: 1, mr: 1 }}
-          >
-            Page: {page} of {pagesTotal}
-          </Typography>
-          <IconButton
-            disabled={page === pagesTotal}
-            onClick={() => setPage(page + 1)}
-          >
-            <NavigateNext />
-          </IconButton>
-        </Box>
+        <TablePagination
+          localPage={localPage}
+          localPagesTotal={localPagesTotal}
+          prevPage={prevPage}
+          nextPage={nextPage}
+        />
       </Stack>
 
-      <Dialog
-        onClose={handleCloseDelete}
-        aria-labelledby="customized-dialog-title"
-        open={openDelete}
-      >
-        <DialogTitle
-          sx={{ m: 0, p: 2, width: "400px" }}
-          id="customized-dialog-title"
-        >
-          Delete confirmation
-        </DialogTitle>
-        <IconButton
-          aria-label="close"
-          onClick={handleCloseDelete}
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-          }}
-        >
-          <Close />
-        </IconButton>
-        <DialogContent dividers>
-          <Typography>Delete this user?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button variant="contained" onClick={handleConfirmDelete}>
-            Yes
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        onClose={handleCloseEdit}
-        aria-labelledby="customized-dialog-title"
-        open={openEdit}
-      >
-        <DialogTitle
-          sx={{ m: 0, p: 2, width: "400px" }}
-          id="customized-dialog-title"
-        >
-          Edit user data
-        </DialogTitle>
-        <IconButton
-          aria-label="close"
-          onClick={handleCloseEdit}
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-          }}
-        >
-          <Close />
-        </IconButton>
-        <DialogContent dividers>
-          <Typography>Editing user</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button variant="contained" onClick={handleConfirmEdit}>
-            Yes
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteDialog
+        handleCloseDelete={handleCloseDelete}
+        openDelete={openDelete}
+        currentUser={currentUser}
+        handleConfirmDelete={handleConfirmDelete}
+      />
+      <EditDialog
+        handleCloseEdit={handleCloseEdit}
+        openEdit={openEdit}
+        currentUser={currentUser}
+        handleConfirmEdit={handleConfirmEdit}
+        handleUpdateUser={handleUpdateUser}
+        hasEmail={hasEmail}
+        hasFirstName={hasFirstName}
+        hasLastName={hasLastName}
+      />
+      <AddDialog
+        handleCloseAdd={handleCloseAdd}
+        openAdd={openAdd}
+        currentUser={currentUser}
+        handleConfirmAdd={handleConfirmAdd}
+        handleUpdateUser={handleUpdateUser}
+        hasEmail={hasEmail}
+        hasFirstName={hasFirstName}
+        hasLastName={hasLastName}
+      />
     </>
   );
 }

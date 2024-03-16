@@ -11,11 +11,11 @@ export interface IRegisterResponse {
 }
 
 export interface IUser {
-  id: number;
+  id?: number;
   email: string;
   first_name: string;
   last_name: string;
-  avatar: string;
+  avatar?: string;
 }
 
 interface ISupport {
