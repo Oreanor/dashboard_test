@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -10,9 +11,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { logIn, register } from "../../services";
+import { ILogInResponse } from "../../interfaces";
 
 interface IProps {
-  onLogin: (isLogin: boolean) => void;
+  onLogin: (response: ILogInResponse) => void;
 }
 
 function Login(props: IProps) {
@@ -23,6 +26,7 @@ function Login(props: IProps) {
   const [hasLogin, setHasLogin] = useState(true);
   const [hasPwd, setHasPwd] = useState(true);
   const [isEqual, setIsEqual] = useState(true);
+  const [errorText, setErrorText] = useState("");
 
   const { onLogin } = props;
 
@@ -39,51 +43,69 @@ function Login(props: IProps) {
     setHasLogin(true);
     setHasPwd(true);
     setIsEqual(true);
+    setErrorText("");
   };
 
-  const checkErrors = () => {
-    setHasLogin(checkLogin());
-    setHasPwd(checkPwd());
-    if (isSignUp) setIsEqual(checkEqual());
-
-    if (
-      checkLogin() &&
-      checkPwd() &&
-      (!isSignUp || (isSignUp && checkEqual()))
-    ) {
-      onLogin();
+  //I have to use register method for signing in instead of logIn,
+  //because logIn API returns only token without user id.
+  //This is insufficient to get user data and display user's name.
+  //In real project I would surely discuss this issue with backend developers to add the id in the response.
+  //The other option could be loading all users and find the one with specified email among them,
+  //but this is a totally wrong approach in my opinion.
+  const handleSignIn = async () => {
+    if (checkErrors()) {
+      const resJSON = await register(login, password);
+      if (resJSON.error) {
+        setErrorText(resJSON.error);
+      } else {
+        onLogin(resJSON);
+      }
     }
   };
 
-  const checkLogin = () => login !== "";
-  const checkPwd = () => password !== "";
-  const checkEqual = () => password === password2;
-
-  const handleSignIn = () => {
-    console.log("call sign in api " + login + ":" + password);
-    checkErrors();
+  const handleRegister = async () => {
+    if (checkErrors()) {
+      const resJSON = await register(login, password);
+      if (resJSON.error) {
+        setErrorText(resJSON.error);
+      } else {
+        onLogin(resJSON);
+      }
+    }
   };
 
-  const handleRegister = () => {
-    console.log("call register api" + login + ":" + password + password2);
-    checkErrors();
+  const checkErrors = (): boolean => {
+    const hasLoginError = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
+      login
+    );
+    const hasPwdError = password !== "";
+    const hasEqualityError = password === password2;
+    setHasLogin(hasLoginError);
+    setHasPwd(hasPwdError);
+    if (isSignUp) setIsEqual(hasEqualityError);
+    return (
+      hasLoginError &&
+      hasPwdError &&
+      (!isSignUp || (isSignUp && hasEqualityError))
+    );
   };
 
   return (
     <Box sx={{ width: "300px" }}>
+      {errorText && <Alert severity="error">{errorText}</Alert>}
       <Card variant="outlined">
         <CardContent sx={{ p: 2 }}>
           <Stack spacing={2}>
             <Typography variant="h6" sx={{ m: 2 }}>
-              {isSignUp ? "Choose login and password:" : "Please, log in:"}
+              {isSignUp ? "Enter email and password:" : "Please, log in:"}
             </Typography>
             <TextField
               id="login-register"
-              label="Login"
+              label="Email"
               variant="outlined"
               onChange={(event) => setLogin(event.target.value)}
               error={!hasLogin}
-              helperText={!hasLogin ? "Login cannot be empty" : ""}
+              helperText={!hasLogin ? "Email must be valid" : ""}
             />
             <TextField
               id="pwd-register"

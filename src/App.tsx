@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import {
   AppBar,
+  Box,
+  CircularProgress,
   CssBaseline,
   FormControlLabel,
   Stack,
@@ -9,16 +11,34 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import "./App.css";
 import Login from "./components/Login/Login";
+import UserTable from "./components/UserTable/UserTable";
+import { ILogInResponse, IUser } from "./interfaces";
+import { getUserByID } from "./services";
 
 function App() {
   const [isDarkTheme, setIsDarkTheme] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState<IUser | null>(null);
+
+  //michael.lawson@reqres.in
+
+  const token = sessionStorage.getItem("token");
 
   useEffect(() => {
     const darkTheme = localStorage.getItem("darkTheme");
     setIsDarkTheme(darkTheme === "true");
+
+    const fetchUserData = async () => {
+      const id = sessionStorage.getItem("id");
+      if (id) {
+        const res = await getUserByID(id);
+        setUserInfo(res.data);
+      }
+    };
+
+    if (token) {
+      fetchUserData();
+    }
   }, []);
 
   const theme = createTheme({
@@ -28,19 +48,25 @@ function App() {
   });
 
   const toggleDarkTheme = () => {
-    const newToggletTheme = !isDarkTheme;
-    setIsDarkTheme(newToggletTheme);
-    localStorage.setItem("darkTheme", newToggletTheme.toString());
+    const toggledTheme = !isDarkTheme;
+    setIsDarkTheme(toggledTheme);
+    localStorage.setItem("darkTheme", toggledTheme.toString());
   };
 
-  const handleLogIn = () => {
-    setIsLoggedIn(true);
+  const handleLogIn = async (response: ILogInResponse) => {
+    const { id, token } = response;
+    if (id && token) {
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("id", id);
+      const res = await getUserByID(id);
+      setUserInfo(res.data);
+    }
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppBar>
+      <AppBar position="static">
         <Toolbar>
           <Typography sx={{ flexGrow: 1 }} variant="h5">
             Dashboard test
@@ -53,16 +79,29 @@ function App() {
           />
         </Toolbar>
       </AppBar>
-      <div className="main_container">
-        {isLoggedIn ? (
-          <Stack>
-            <Typography variant="h5">Hello, user!</Typography>
-            <Typography>Users data</Typography>
-          </Stack>
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {token ? (
+          userInfo ? (
+            <Stack>
+              <Typography variant="h5" sx={{ p: 2 }}>
+                Hello, {userInfo?.first_name}!
+              </Typography>
+              <UserTable />
+            </Stack>
+          ) : (
+            <CircularProgress />
+          )
         ) : (
           <Login onLogin={handleLogIn} />
         )}
-      </div>
+      </Box>
     </ThemeProvider>
   );
 }
