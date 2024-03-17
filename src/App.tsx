@@ -17,10 +17,8 @@ import { ILogInResponse, IUser } from "./interfaces";
 import { getUserByID } from "./services";
 
 function App() {
-  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
+  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(false);
   const [userInfo, setUserInfo] = useState<IUser | null>(null);
-
-  //michael.lawson@reqres.in
 
   const token = sessionStorage.getItem("token");
 
@@ -73,14 +71,18 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppBar position="static">
+      <AppBar>
         <Toolbar>
-          <Typography sx={{ flexGrow: 1 }} variant="h5">
+          <Typography sx={{ flexGrow: 1 }} variant="h5" data-cy="app-title">
             Dashboard test
           </Typography>
           <FormControlLabel
             control={
-              <Switch checked={isDarkTheme} onChange={toggleDarkTheme} />
+              <Switch
+                data-cy="theme-switch"
+                checked={isDarkTheme}
+                onChange={toggleDarkTheme}
+              />
             }
             label="Toggle dark/light theme"
           />
@@ -89,15 +91,16 @@ function App() {
       <Box
         sx={{
           width: "100%",
+          minHeight: "100vh",
           display: "flex",
-          alignItems: "center",
+
           justifyContent: "center",
         }}
       >
         {token ? (
           userInfo ? (
-            <Stack>
-              <Typography variant="h6" sx={{ p: 2 }}>
+            <Stack sx={{ mt: 10 }}>
+              <Typography variant="h6" sx={{ p: 2 }} data-cy="welcome-header">
                 Hello, {userInfo?.first_name}!
               </Typography>
               <UserTable />

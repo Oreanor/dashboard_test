@@ -1,3 +1,4 @@
+import { Close } from "@mui/icons-material";
 import {
   Button,
   Dialog,
@@ -7,8 +8,6 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-
-import { Close } from "@mui/icons-material";
 import { IUser } from "../../../interfaces";
 
 interface IProps {
@@ -23,6 +22,7 @@ function DeleteDialog(props: IProps) {
     props;
   return (
     <Dialog
+      data-cy="delete-dialog"
       onClose={handleCloseDelete}
       aria-labelledby="customized-dialog-title"
       open={openDelete}
@@ -52,10 +52,18 @@ function DeleteDialog(props: IProps) {
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" onClick={handleCloseDelete}>
+        <Button
+          data-cy="cancel-delete-button"
+          variant="outlined"
+          onClick={handleCloseDelete}
+        >
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleConfirmDelete}>
+        <Button
+          data-cy="confirm-delete-button"
+          variant="contained"
+          onClick={handleConfirmDelete}
+        >
           OK
         </Button>
       </DialogActions>

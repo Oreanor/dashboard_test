@@ -1,5 +1,5 @@
-import { Box, IconButton, Typography } from "@mui/material";
 import { NavigateBefore, NavigateNext } from "@mui/icons-material";
+import { Box, IconButton, Typography } from "@mui/material";
 
 interface IProps {
   localPage: number;
@@ -20,16 +20,25 @@ function TablePagination(props: IProps) {
         m: 1,
       }}
     >
-      <IconButton disabled={localPage === 1} onClick={prevPage}>
+      <IconButton
+        data-cy="prev-button"
+        disabled={localPage === 1}
+        onClick={prevPage}
+      >
         <NavigateBefore />
       </IconButton>
       <Typography
+        data-cy="page-of"
         variant="body2"
         sx={{ display: "inline-block", ml: 1, mr: 1 }}
       >
-        Page: {localPage} of {localPagesTotal}
+        {`Page: ${localPage} of ${localPagesTotal}`}
       </Typography>
-      <IconButton disabled={localPage === localPagesTotal} onClick={nextPage}>
+      <IconButton
+        data-cy="next-button"
+        disabled={localPage === localPagesTotal}
+        onClick={nextPage}
+      >
         <NavigateNext />
       </IconButton>
     </Box>

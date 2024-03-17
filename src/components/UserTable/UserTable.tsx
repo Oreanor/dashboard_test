@@ -3,10 +3,12 @@ import { USERS_PER_PAGE } from "../../consts";
 import { IUser } from "../../interfaces";
 import { getUsers, deleteUser, createUser, updateUser } from "../../services";
 import { UserProps } from "../../types";
+import { Edit, Delete } from "@mui/icons-material";
 import {
   Avatar,
   Button,
   CircularProgress,
+  IconButton,
   Stack,
   Table,
   TableBody,
@@ -16,7 +18,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
 import DeleteDialog from "./Dialogs/DeleteDialog";
 import EditDialog from "./Dialogs/EditDialog";
 import AddDialog from "./Dialogs/AddDialog";
@@ -147,8 +148,8 @@ function UserTable() {
   //Delete user handling
   const handleOpenDelete = (id: number) => {
     setOpenDelete(true);
-    const currUser = findUser(id);
-    setCurrentUser(currUser);
+    const userToDelete = findUser(id);
+    setCurrentUser(userToDelete);
   };
 
   const handleConfirmDelete = async () => {
@@ -169,6 +170,7 @@ function UserTable() {
 
   const handleCloseDelete = () => setOpenDelete(false);
 
+  //Pages navigation
   const prevPage = () => {
     setLocalPage(localPage - 1);
   };
@@ -205,13 +207,14 @@ function UserTable() {
     <>
       <Stack>
         <Button
+          data-cy="add-button"
           sx={{ width: "150px" }}
           variant="contained"
           onClick={handleOpenAdd}
         >
           Add user
         </Button>
-        <TableContainer>
+        <TableContainer data-cy="table-container">
           <Table sx={{ minWidth: 600 }} aria-label="simple table">
             <TableHead>
               <TableRow>
@@ -250,14 +253,18 @@ function UserTable() {
                         <TableCell>{row.last_name}</TableCell>
                         <TableCell>{row.email}</TableCell>
                         <TableCell>
-                          <Edit
-                            sx={{ mr: 2, cursor: "pointer" }}
+                          <IconButton
+                            data-cy={`edit-button-${row.id}`}
                             onClick={() => row.id && handleOpenEdit(row.id)}
-                          />
-                          <Delete
-                            sx={{ cursor: "pointer" }}
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            data-cy={`delete-button-${row.id}`}
                             onClick={() => row.id && handleOpenDelete(row.id)}
-                          />
+                          >
+                            <Delete />
+                          </IconButton>
                         </TableCell>
                       </TableRow>
                     ))}

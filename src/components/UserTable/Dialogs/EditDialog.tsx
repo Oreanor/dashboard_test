@@ -1,3 +1,4 @@
+import { Close } from "@mui/icons-material";
 import {
   Button,
   Dialog,
@@ -9,7 +10,7 @@ import {
   TextField,
 } from "@mui/material";
 
-import { Close } from "@mui/icons-material";
+import { INPUT_MAX_LENGTH } from "../../../consts";
 import { IUser } from "../../../interfaces";
 import { UserProps } from "../../../types";
 
@@ -37,6 +38,7 @@ function EditDialog(props: IProps) {
   } = props;
   return (
     <Dialog
+      data-cy="edit-dialog"
       onClose={handleCloseEdit}
       aria-labelledby="customized-dialog-title"
       open={openEdit}
@@ -62,6 +64,7 @@ function EditDialog(props: IProps) {
       <DialogContent dividers>
         <Stack spacing={2}>
           <TextField
+            data-cy="email-input-edit"
             id="email-input"
             label="Email"
             variant="outlined"
@@ -69,8 +72,12 @@ function EditDialog(props: IProps) {
             onChange={(event) => handleUpdateUser("email", event.target.value)}
             error={!hasEmail}
             helperText={!hasEmail ? "Email must be valid" : ""}
+            inputProps={{
+              maxLength: INPUT_MAX_LENGTH,
+            }}
           />
           <TextField
+            data-cy="first-name-input-edit"
             id="first-name-input"
             label="First name"
             variant="outlined"
@@ -80,8 +87,12 @@ function EditDialog(props: IProps) {
             }
             error={!hasFirstName}
             helperText={!hasFirstName ? "First name cannot be empty" : ""}
+            inputProps={{
+              maxLength: INPUT_MAX_LENGTH,
+            }}
           />
           <TextField
+            data-cy="last-name-input-edit"
             id="last-name-input"
             label="Last name"
             variant="outlined"
@@ -91,14 +102,25 @@ function EditDialog(props: IProps) {
             }
             error={!hasLastName}
             helperText={!hasLastName ? "Last name cannot be empty" : ""}
+            inputProps={{
+              maxLength: INPUT_MAX_LENGTH,
+            }}
           />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" onClick={handleCloseEdit}>
+        <Button
+          data-cy="cancel-edit-button"
+          variant="outlined"
+          onClick={handleCloseEdit}
+        >
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleConfirmEdit}>
+        <Button
+          data-cy="save-edit-button"
+          variant="contained"
+          onClick={handleConfirmEdit}
+        >
           Save changes
         </Button>
       </DialogActions>

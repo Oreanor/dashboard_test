@@ -11,22 +11,23 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { register } from "../../services";
+import { INPUT_MAX_LENGTH } from "../../consts";
 import { ILogInResponse } from "../../interfaces";
+import { register } from "../../services";
 
 interface IProps {
   onLogin: (response: ILogInResponse) => void;
 }
 
 function Login(props: IProps) {
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-  const [hasLogin, setHasLogin] = useState(true);
-  const [hasPwd, setHasPwd] = useState(true);
-  const [isEqual, setIsEqual] = useState(true);
-  const [errorText, setErrorText] = useState("");
+  const [isSignUp, setIsSignUp] = useState<boolean>(false);
+  const [login, setLogin] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [password2, setPassword2] = useState<string>("");
+  const [hasLogin, setHasLogin] = useState<boolean>(true);
+  const [hasPwd, setHasPwd] = useState<boolean>(true);
+  const [isEqual, setIsEqual] = useState<boolean>(true);
+  const [errorText, setErrorText] = useState<string>("");
 
   const { onLogin } = props;
 
@@ -99,23 +100,32 @@ function Login(props: IProps) {
   };
 
   return (
-    <Box sx={{ width: "300px", m: 2 }}>
-      {errorText && <Alert severity="error">{errorText}</Alert>}
+    <Box sx={{ width: "300px", mt: 12 }}>
+      {errorText && (
+        <Alert severity="error" data-cy="login-alert" sx={{ mb: 2 }}>
+          {errorText}
+        </Alert>
+      )}
       <Card variant="outlined">
-        <CardContent sx={{ p: 2 }}>
+        <CardContent sx={{ p: 2 }} data-cy="card-content">
           <Stack spacing={2}>
             <Typography variant="h6" sx={{ m: 2 }}>
               {isSignUp ? "Enter email and password:" : "Please, log in:"}
             </Typography>
             <TextField
+              data-cy="login-input"
               id="login-register"
               label="Email"
               variant="outlined"
               onChange={(event) => setLogin(event.target.value)}
               error={!hasLogin}
               helperText={!hasLogin ? "Email must be valid" : ""}
+              inputProps={{
+                maxLength: INPUT_MAX_LENGTH,
+              }}
             />
             <TextField
+              data-cy="password-input"
               id="pwd-register"
               label="Password"
               type="password"
@@ -124,9 +134,13 @@ function Login(props: IProps) {
               onChange={(event) => setPassword(event.target.value)}
               error={!hasPwd}
               helperText={!hasPwd ? "Password cannot be empty" : ""}
+              inputProps={{
+                maxLength: INPUT_MAX_LENGTH,
+              }}
             />
             {isSignUp && (
               <TextField
+                data-cy="password2-input"
                 id="pwd-register2"
                 label="Retype password"
                 type="password"
@@ -135,6 +149,9 @@ function Login(props: IProps) {
                 onChange={(event) => setPassword2(event.target.value)}
                 error={!isEqual}
                 helperText={!isEqual ? "Passwords must be equal" : ""}
+                inputProps={{
+                  maxLength: INPUT_MAX_LENGTH,
+                }}
               />
             )}
           </Stack>
@@ -143,22 +160,38 @@ function Login(props: IProps) {
           {isSignUp ? (
             <Container>
               <Button
+                data-cy="register-button"
                 variant="contained"
                 sx={{ m: 1 }}
                 onClick={handleRegister}
               >
                 Register
               </Button>
-              <Button variant="outlined" sx={{ m: 1 }} onClick={handleBack}>
+              <Button
+                data-cy="back-button"
+                variant="outlined"
+                sx={{ m: 1 }}
+                onClick={handleBack}
+              >
                 Back
               </Button>
             </Container>
           ) : (
             <Container>
-              <Button variant="contained" sx={{ m: 1 }} onClick={handleSignIn}>
+              <Button
+                data-cy="sign-in-button"
+                variant="contained"
+                sx={{ m: 1 }}
+                onClick={handleSignIn}
+              >
                 Sign in
               </Button>
-              <Button variant="outlined" sx={{ m: 1 }} onClick={handleSignUp}>
+              <Button
+                data-cy="sign-up-button"
+                variant="outlined"
+                sx={{ m: 1 }}
+                onClick={handleSignUp}
+              >
                 Sign up
               </Button>
             </Container>
