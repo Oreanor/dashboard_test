@@ -1,12 +1,8 @@
-#Test code challenge
-
-#### Example:
+# Test code challenge
 
 Simple dashboard working with Reqres API.
 
 ## Installation and Setup Instructions
-
-#### Example:
 
 Clone the repository. You will need `node` and `npm` installed globally on your machine.
 
